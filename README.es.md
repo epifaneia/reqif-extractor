@@ -72,7 +72,15 @@ Salida: `data/outputs/reqif/v1_nested/<doc>.reqif`. Este repositorio no lleva da
 
 - Los ítems `type=information` siguen saliendo como work items de requisito, marcados explícitamente `(information only)` en el texto visible. Mapearlos al tipo Info nativo de Polarion está pendiente.
 - La pasada de visión aún tiene ruido: un falso positivo con un id nuevo entra al fichero. `id_policy` rechaza los inventados; no puede rechazar uno con pinta real que simplemente esté mal.
-- Las pasadas A y B llaman a un modelo de nube por defecto. Existe un backend de VLM local (`clients/vlm_local`) pero se ha ejercitado mucho menos que el de nube.
+- Dos backends para el modelo, los dos en uso. Cuál elegir depende del documento, no del motor:
+
+  | | Nube (`gemini`) | VLM local (`vlm_local`) |
+  |---|---|---|
+  | Dónde va el dato | Sale de la máquina: markdown del documento, filas de tabla, recortes de figuras | Se queda en la máquina |
+  | Hardware | Ninguno | Una GPU en la que quepa el modelo |
+  | Coste | Por token; ~1/20 de la visión del PDF entero tras el enrutado por regiones | Electricidad |
+  | Para qué usarlo | Especificaciones públicas o no confidenciales | Documentos que no pueden salir de la nave |
+  | Por defecto hoy | Sí | `VLM_BACKEND=local` |
 - `reference/gold.reqif`, un fichero que importó bien en Polarion, es opcional y no se incluye: depende de la plantilla de tu proyecto.
 - Identidad, eventos y firma van como contrato con un valor local por defecto (variable de entorno, fichero JSONL, clave HMAC). Los adaptadores al Entra ID, SIEM o PKI de una empresa no están aquí ni se pueden probar aquí: ver [docs/INTEGRATION.es.md](docs/INTEGRATION.es.md).
 

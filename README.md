@@ -72,7 +72,15 @@ Output: `data/outputs/reqif/v1_nested/<doc>.reqif`. This repository ships no dat
 
 - Items of `type=information` are still emitted as requirement work items, explicitly marked `(information only)` in the visible text. Mapping them to Polarion's native Info type is pending.
 - The vision pass still has noise: a false positive with a new id enters the file. `id_policy` rejects the invented ones; it cannot reject a real-looking one that is simply wrong.
-- Pass A and pass B call a cloud model by default. A local VLM backend exists (`clients/vlm_local`) but has been exercised far less than the cloud one.
+- Two backends for the model, both in use. Which one to pick depends on the document, not on the engine:
+
+  | | Cloud (`gemini`) | Local VLM (`vlm_local`) |
+  |---|---|---|
+  | Where the data goes | Leaves the machine: document markdown, table rows, figure crops | Stays on the machine |
+  | Hardware | None | A GPU that fits the model |
+  | Cost | Per token; ~1/20 of whole-PDF vision after region routing | Electricity |
+  | Use it for | Public or non-confidential specifications | Documents that cannot leave the building |
+  | Default today | Yes | `VLM_BACKEND=local` |
 - `reference/gold.reqif`, a file that imported correctly into Polarion, is optional and not included: it depends on your project's template.
 - Identity, events and sign-off are shipped as a contract with a local default (environment variable, JSONL file, HMAC key). The adapters to a company's Entra ID, SIEM or PKI are not here and cannot be tested here: see [docs/INTEGRATION.md](docs/INTEGRATION.md).
 
