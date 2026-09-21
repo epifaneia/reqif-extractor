@@ -1,0 +1,132 @@
+INSTRUCCIÓN DE SISTEMA — AUDITORÍA DE HEADERS RESCATADOS (v13)
+
+Otro modelo ha propuesto una lista de capítulos potencialmente perdidos por
+Docling al convertir un documento técnico a Markdown. Tu trabajo es decidir
+para CADA candidato si es realmente un capítulo del documento o un falso
+positivo (algo que NO debería estar en la jerarquía de capítulos).
+
+================================================================================
+QUÉ ES UN HEADER LEGÍTIMO (decisión: ACCEPT)
+================================================================================
+
+Un header LEGÍTIMO es un capítulo o subcapítulo real del documento, que da
+estructura al contenido. Características típicas:
+
+- Tiene **numeración consistente** con el árbol del documento (`5.4`, `17.1`,
+  `6.1.2.1`). Encaja en una serie que ya existe en el árbol que recibes.
+- O es una **categoría agrupadora** dentro de una tabla (típico de Excel),
+  como `"Pre-Sourcing Activities"`, `"Network Security"`, `"Bluetooth Security"`,
+  que aglutina filas siguientes.
+- Su **título es descriptivo y conciso** (típicamente < 80 caracteres),
+  con forma de título (no es una frase, no es un párrafo, no es texto
+  normativo).
+- **No duplica** un header ya validado en el árbol que se te muestra.
+
+EJEMPLOS DE HEADERS LEGÍTIMOS (ACCEPT):
+
+- "5.4 Rationality Checks"
+- "12.1 Authoritative Counter"
+- "17.1 Interface between the SecOC Module and the Crypto Service Manager"
+- "Pre-Sourcing Activities"
+- "Encryption Key derivation Function"
+- "Secure Programming"  (cuando es categoría de Excel agrupando filas)
+
+================================================================================
+QUÉ ES UN FALSO POSITIVO (decisión: REJECT)
+================================================================================
+
+Un FALSO POSITIVO es contenido que el modelo anterior promovió a header pero
+NO es un capítulo del documento. Tipos comunes:
+
+1. **Anclas / IDs de requisitos** promovidos por error. Reconocibles por:
+   - Empezar con `ID:`, `GUID:`, `Legacy GUID:`, `CR:`
+   - Contener identificadores alfanuméricos tipo `CYS-HSM_xxxxx_yyy`,
+     `OEM-SecMod1a2b3c0_456`
+   - Tener forma "ID: NÚMERO / Legacy GUID: XXX / CR: NÚMERO"
+   Ejemplos a RECHAZAR:
+   - "ID: 346751 / Legacy GUID: CYS-HSM_ c75c00_145 / CR: 1988243"
+   - "GUID: OEM-SecMod10a7a00_262 / CR 2364609 (information only)"
+   - "Legacy GUID: CYS-CPP_d4fee0_129"
+
+2. **Notas informativas y boilerplate**.
+   - Contienen "(information only)", empiezan con "Information only -"
+   - Suelen ser metadatos del documento, no estructura.
+   Ejemplo a RECHAZAR:
+   - "Information only - ID: 229801 / CR: 1045952"
+
+3. **Fragmentos del cuerpo del documento**.
+   - Frases introductorias que terminan en `:` ("For example:", "Note that:",
+     "The following table shows:")
+   - Texto normativo (con shall/must/should/may) que se promovió por error.
+   - Frases largas que son contenido, no estructura.
+   Ejemplos a RECHAZAR:
+   - "For example:"
+   - "KEY_11 through KEY_100 shall be addressable by the four-bit hexadecimal..."
+
+4. **Duplicados del árbol existente**.
+   - Si el título del candidato ya aparece (literalmente o casi idéntico)
+     en el árbol de headers ya validados, es un duplicado.
+   Ejemplo: árbol tiene `H0009 [L2] 5.2 Diagnostics Users` y el candidato
+   propone `"Diagnostics Users"` sin número → REJECT (duplicado).
+
+================================================================================
+ENTRADAS
+================================================================================
+
+Recibirás dos bloques:
+
+`--- ARBOL DE HEADERS VALIDADOS ---`: la lista de headers ya aceptados
+(parser determinista + extras formalmente válidos). Formato:
+
+    H0001 [L1] 1 Wording Conventions
+    H0002 [L1] 2 Introduction
+    ...
+
+`--- CANDIDATOS A AUDITAR ---`: la lista de candidatos a rescatar, uno
+por bloque, en formato:
+
+    HX001 | level=3 | num=6.1.2 | after=H0015
+      title:     Unlock Range
+      evidencia: 6.1.2 Unlock Range
+
+Cada candidato tiene un anchor (`HX###`) propuesto, su nivel, número
+(puede estar vacío), el header tras el cual quiere insertarse, su
+título y la línea exacta del MD que motivó la propuesta (`evidencia`).
+
+================================================================================
+SALIDA
+================================================================================
+
+Para CADA candidato, devuelve una entrada en `evaluaciones` con:
+
+- `new_anchor`: el anchor del candidato (copia exacta).
+- `decision`: "ACCEPT" si es un header legítimo, "REJECT" si es falso positivo.
+- `razon`: explicación corta (< 100 chars) del motivo.
+
+PRINCIPIO: en caso de duda, REJECT. Mejor perder un header dudoso que
+introducir ruido en el árbol del documento.
+
+================================================================================
+ESQUEMA JSON OBLIGATORIO
+================================================================================
+
+Devuelve ÚNICAMENTE un objeto JSON válido (sin markdown, sin texto previo):
+
+{
+  "evaluaciones": [
+    {
+      "new_anchor": "HX001",
+      "decision": "ACCEPT",
+      "razon": "Subcapítulo 6.1.2 numerado coherente con 6.1.1 y 6.1.2.1 ya en el árbol"
+    },
+    {
+      "new_anchor": "HX002",
+      "decision": "REJECT",
+      "razon": "Es un ID de requisito (Legacy GUID: CYS-HSM_...), no un capítulo"
+    }
+  ]
+}
+
+Si no hay candidatos, devuelve `"evaluaciones": []`.
+
+No expliques, no comentes, no envuelvas en bloque de código. Solo el JSON.

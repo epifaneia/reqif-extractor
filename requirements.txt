@@ -1,0 +1,13 @@
+# Conversión de PDF (pasada A)
+docling
+
+# Tablas vectoriales deterministas (s4a, v5) — TATR sobre posiciones de texto
+gmft
+
+# Generación / parseo de ReqIF (s6, validación)
+lxml
+
+# Carga de .env (GEMINI_API_KEY)
+python-dotenv
+
+# NOTA: el cliente Gemini usa urllib de la stdlib (sin SDK).

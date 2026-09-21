@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.py[cod]
+# datos: nunca en el repo; solo el .gitkeep de la carpeta de entrada
+data/*
+!data/inputs/
+data/inputs/*
+!data/inputs/.gitkeep
+reference/*
+!reference/.gitkeep
+logs/
