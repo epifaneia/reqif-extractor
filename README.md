@@ -49,10 +49,21 @@ Numbers come from a run over 12 real specification documents of one manufacturer
 | Cost of pass B, region routing vs whole-PDF vision | **~1/20** | Same recall; whole-PDF vision was ~1 € per 100 pages |
 | Documents passing the five structural checks against a Polarion-imported reference | **12 / 12**, 2,695 references resolved, 0 orphans | XML well-formed, spec types identical, one div root, references resolved, per-document id prefix |
 
-## Polarion, real run (redacted)
+## Polarion
 
-<!-- docs/img/polarion-01-import.png · 02-tree.png · 03-requirement.png -->
-*Screenshots pending: import dialog, document tree with the PDF's hierarchy, one requirement with its verbatim ForeignID. Names and text blacked out.*
+Public data in a Polarion trial: the AUTOSAR SWS COM specification, 465 items and 217 headings extracted from the PDF and imported in one attempt. Nothing to redact.
+
+*The import mapping: headings to Heading, items to System Requirement, `ReqIF.Text` to Description, `ReqIF.ForeignID` to Title.*
+
+![ReqIF import mapping in Polarion](docs/img/polarion-01-import.png)
+
+*The document after import: the PDF's own hierarchy, every item under its heading, every title the verbatim `SWS_Com_…` identifier.*
+
+![AUTOSAR SWS COM document in Polarion](docs/img/polarion-02-tree.png)
+
+*One requirement: identifier, text, and its parent heading as a link.*
+
+![One imported requirement](docs/img/polarion-03-requirement.png)
 
 ## Demo in four commands (public data)
 
