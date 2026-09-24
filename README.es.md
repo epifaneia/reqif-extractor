@@ -49,10 +49,21 @@ Las cifras vienen de una pasada sobre 12 documentos reales de especificación de
 | Coste de la pasada B, enrutado por regiones frente a visión del PDF entero | **~1/20** | Mismo recall; la visión del PDF entero costaba ~1 € por 100 páginas |
 | Documentos que pasan las cinco comprobaciones estructurales contra una referencia importada en Polarion | **12 / 12**, 2.695 referencias resueltas, 0 huérfanos | XML bien formado, spec types idénticos, un div raíz, referencias resueltas, prefijo de id por documento |
 
-## Polarion, corrida real (tachada)
+## Polarion
 
-<!-- docs/img/polarion-01-import.png · 02-tree.png · 03-requirement.png -->
-*Capturas pendientes: diálogo de importación, árbol del documento con la jerarquía del PDF, un requisito con su ForeignID verbatim. Nombres y texto tachados.*
+Datos públicos en un Polarion de prueba: la especificación AUTOSAR SWS COM, 465 ítems y 217 cabeceras extraídos del PDF e importados a la primera. Nada que tachar.
+
+*El mapeo de importación: cabeceras a Heading, ítems a System Requirement, `ReqIF.Text` a Description, `ReqIF.ForeignID` a Title.*
+
+![Mapeo de importación ReqIF en Polarion](docs/img/polarion-01-import.png)
+
+*El documento tras el import: la jerarquía del propio PDF, cada ítem bajo su cabecera, cada título el identificador verbatim `SWS_Com_…`.*
+
+![Documento AUTOSAR SWS COM en Polarion](docs/img/polarion-02-tree.png)
+
+*Un requisito: identificador, texto y su cabecera padre como enlace.*
+
+![Un requisito importado](docs/img/polarion-03-requirement.png)
 
 ## Demo en cuatro comandos (datos públicos)
 
