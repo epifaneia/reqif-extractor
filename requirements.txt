@@ -7,6 +7,9 @@ gmft
 # Generación / parseo de ReqIF (s6, validación)
 lxml
 
+# Lectura de páginas en el fallback de página completa (s4, activo por defecto)
+pypdf
+
 # Carga de .env (GEMINI_API_KEY)
 python-dotenv
 

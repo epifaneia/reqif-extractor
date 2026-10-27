@@ -956,9 +956,14 @@ def _write_b(stem: str, ja: dict, items: list[dict], existing_ids: set[str],
 
 def main() -> int:
     only = sys.argv[1] if len(sys.argv) > 1 else None
-    if not config.GEMINI_API_KEY and config.VLM_BACKEND != "local":
-        print("[ERR] GEMINI_API_KEY no configurada")
+    # Las filas de tabla y el arbitraje de huérfanos van siempre a Gemini: el backend
+    # local solo sustituye la llamada de recortes de figuras.
+    if not config.GEMINI_API_KEY:
+        print("[ERR] GEMINI_API_KEY no configurada (tablas y arbitraje usan Gemini también con REQIF_VLM_BACKEND=local)")
         return 1
+    if config.VLM_BACKEND == "local":
+        print("[AVISO] REQIF_VLM_BACKEND=local: los recortes de figuras se quedan en la máquina; "
+              "el markdown (s3), las filas de tabla y el arbitraje siguen yendo a Gemini.")
     jas = sorted(config.JSON_A_DIR.glob("*.json"))
     if only:
         jas = [p for p in jas if only.lower() in p.stem.lower()]

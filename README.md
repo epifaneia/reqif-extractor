@@ -71,7 +71,7 @@ AUTOSAR specifications are public and use exactly the pattern this engine was bu
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env                         # GEMINI_API_KEY, or VLM_BACKEND=local
+cp .env.example .env                         # GEMINI_API_KEY (required); REQIF_VLM_BACKEND=local keeps figure crops local
 # drop AUTOSAR_SWS_COM.pdf (autosar.org) and NIST_SP_800-171r2.pdf (nist.gov) in data/inputs/
 python run.py                                # s1 → s6, all documents, in parallel
 python tools/crop_ids.py && python tools/sanitize_reqif.py     # Polarion-ready variants
@@ -83,15 +83,17 @@ Output: `data/outputs/reqif/v1_nested/<doc>.reqif`. This repository ships no dat
 
 - Items of `type=information` are still emitted as requirement work items, explicitly marked `(information only)` in the visible text. Mapping them to Polarion's native Info type is pending.
 - The vision pass still has noise: a false positive with a new id enters the file. `id_policy` rejects the invented ones; it cannot reject a real-looking one that is simply wrong.
-- Two backends for the model, both in use. Which one to pick depends on the document, not on the engine:
+- **The engine always needs the cloud today.** Pass A (document markdown), table rows and orphan arbitration go to Gemini whatever the backend. The local VLM replaces only one call, the figure crops of pass B:
 
   | | Cloud (`gemini`) | Local VLM (`vlm_local`) |
   |---|---|---|
-  | Where the data goes | Leaves the machine: document markdown, table rows, figure crops | Stays on the machine |
+  | What it covers | Everything: markdown, table rows, figure crops, arbitration | Figure crops only |
+  | Where the data goes | Leaves the machine | Crops stay on the machine; the text still leaves |
   | Hardware | None | A GPU that fits the model |
   | Cost | Per token; ~1/20 of whole-PDF vision after region routing | Electricity |
-  | Use it for | Public or non-confidential specifications | Documents that cannot leave the building |
-  | Default today | Yes | `VLM_BACKEND=local` |
+  | Switch | Default | `REQIF_VLM_BACKEND=local` |
+
+  So the engine is for **public or non-confidential specifications**. A fully local route (pass A and tables through a local model) is not built.
 - `reference/gold.reqif`, a file that imported correctly into Polarion, is optional and not included: it depends on your project's template.
 - Identity, events and sign-off are shipped as a contract with a local default (environment variable, JSONL file, HMAC key). The adapters to a company's Entra ID, SIEM or PKI are not here and cannot be tested here: see [docs/INTEGRATION.md](docs/INTEGRATION.md).
 
@@ -103,8 +105,8 @@ Same four headings in every repository. Rows marked **today** are what the code 
 
 | | | |
 |---|---|---|
-| **Confidentiality** | This engine sends document text and region crops to a cloud model by default (`GEMINI_MODEL`), so it is for **non-confidential specifications**, or for a local VLM (`VLM_BACKEND=local`) when the document cannot leave the building. What leaves, when it leaves: the markdown of the document in pass A, table rows as text and figure crops in pass B. `.env` and `data/` are outside git. | **today** |
-| | Local route by default, cloud as the exception that has to be switched on. Not done yet: today the default is cloud, and the ledger records every call that leaves. | **next** |
+| **Confidentiality** | This engine sends document text to a cloud model (`GEMINI_MODEL`), so it is for **non-confidential specifications only**. What leaves: the markdown of the document in pass A, table rows as text in pass B, and figure crops unless `REQIF_VLM_BACKEND=local`, which keeps only the crops on the machine. `.env` and `data/` are outside git. | **today** |
+| | A fully local route (pass A and tables through a local model), then local by default with cloud as the exception that has to be switched on. Not done yet: today the cloud is required, and the ledger records every call that leaves. | **next** |
 | **Traceability** | Every item carries its origin: page, header anchor, source of the id (verbatim, derived, page-anchored), and the reconciliation flips of `infoguard` are reported per document. `s5b_positions` writes an audit of order and hierarchy against the PDF. | **today** |
 | | **Wire 2 · events.** Every model call goes through `custodia/ledger`: one JSON line with actor, step, engine, endpoint, whether data left the machine, input size and hash. Never the text. `logs/custody.jsonl` or stdout. The company points its SIEM at it. | **wire** |
 | **Leak prevention** | The model holds no credentials; the client holds the endpoint. Identifiers are never contaminated by markers or prefixes that could leak into downstream tools: `AD-FullID` / `AD-ReqID` stay clean. | **today** |

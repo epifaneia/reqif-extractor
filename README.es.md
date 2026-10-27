@@ -71,7 +71,7 @@ Las especificaciones AUTOSAR son públicas y usan exactamente el patrón para el
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env                         # GEMINI_API_KEY, o VLM_BACKEND=local
+cp .env.example .env                         # GEMINI_API_KEY (obligatoria); REQIF_VLM_BACKEND=local deja en local los recortes de figuras
 # deja AUTOSAR_SWS_COM.pdf (autosar.org) y NIST_SP_800-171r2.pdf (nist.gov) en data/inputs/
 python run.py                                # s1 → s6, todos los documentos, en paralelo
 python tools/crop_ids.py && python tools/sanitize_reqif.py     # variantes listas para Polarion
@@ -83,15 +83,17 @@ Salida: `data/outputs/reqif/v1_nested/<doc>.reqif`. Este repositorio no lleva da
 
 - Los ítems `type=information` siguen saliendo como work items de requisito, marcados explícitamente `(information only)` en el texto visible. Mapearlos al tipo Info nativo de Polarion está pendiente.
 - La pasada de visión aún tiene ruido: un falso positivo con un id nuevo entra al fichero. `id_policy` rechaza los inventados; no puede rechazar uno con pinta real que simplemente esté mal.
-- Dos backends para el modelo, los dos en uso. Cuál elegir depende del documento, no del motor:
+- **Hoy el motor necesita siempre la nube.** La pasada A (markdown del documento), las filas de tabla y el arbitraje de huérfanos van a Gemini sea cual sea el backend. El VLM local sustituye una sola llamada, la de recortes de figuras de la pasada B:
 
   | | Nube (`gemini`) | VLM local (`vlm_local`) |
   |---|---|---|
-  | Dónde va el dato | Sale de la máquina: markdown del documento, filas de tabla, recortes de figuras | Se queda en la máquina |
+  | Qué cubre | Todo: markdown, filas de tabla, recortes de figuras, arbitraje | Solo los recortes de figuras |
+  | Dónde va el dato | Sale de la máquina | Los recortes se quedan en la máquina; el texto sigue saliendo |
   | Hardware | Ninguno | Una GPU en la que quepa el modelo |
   | Coste | Por token; ~1/20 de la visión del PDF entero tras el enrutado por regiones | Electricidad |
-  | Para qué usarlo | Especificaciones públicas o no confidenciales | Documentos que no pueden salir de la nave |
-  | Por defecto hoy | Sí | `VLM_BACKEND=local` |
+  | Cómo se activa | Por defecto | `REQIF_VLM_BACKEND=local` |
+
+  Por tanto, el motor es para **especificaciones públicas o no confidenciales**. Una ruta enteramente local (pasada A y tablas con un modelo local) no está construida.
 - `reference/gold.reqif`, un fichero que importó bien en Polarion, es opcional y no se incluye: depende de la plantilla de tu proyecto.
 - Identidad, eventos y firma van como contrato con un valor local por defecto (variable de entorno, fichero JSONL, clave HMAC). Los adaptadores al Entra ID, SIEM o PKI de una empresa no están aquí ni se pueden probar aquí: ver [docs/INTEGRATION.es.md](docs/INTEGRATION.es.md).
 
@@ -103,8 +105,8 @@ Los mismos cuatro epígrafes en todos los repositorios. Las filas **hoy** son lo
 
 | | | |
 |---|---|---|
-| **Confidencialidad** | Este motor envía por defecto texto del documento y recortes de regiones a un modelo de nube (`GEMINI_MODEL`), así que es para **especificaciones no confidenciales**, o para un VLM local (`VLM_BACKEND=local`) cuando el documento no puede salir de la nave. Qué sale, cuando sale: el markdown del documento en la pasada A, filas de tabla como texto y recortes de figuras en la pasada B. `.env` y `data/` fuera de git. | **hoy** |
-| | Ruta local por defecto, nube como excepción que hay que activar. Aún no hecho: hoy el defecto es nube, y el ledger registra cada llamada que sale. | **siguiente** |
+| **Confidencialidad** | Este motor envía texto del documento a un modelo de nube (`GEMINI_MODEL`), así que es **solo para especificaciones no confidenciales**. Qué sale: el markdown del documento en la pasada A, las filas de tabla como texto en la pasada B, y los recortes de figuras salvo con `REQIF_VLM_BACKEND=local`, que deja en la máquina solo los recortes. `.env` y `data/` fuera de git. | **hoy** |
+| | Una ruta enteramente local (pasada A y tablas con un modelo local) y, después, local por defecto con la nube como excepción que hay que activar. Aún no hecho: hoy la nube es obligatoria, y el ledger registra cada llamada que sale. | **siguiente** |
 | **Trazabilidad** | Cada ítem lleva su origen: página, anchor del header, procedencia del id (verbatim, derivado, anclado a página), y los cambios de `infoguard` se reportan por documento. `s5b_positions` escribe una auditoría de orden y jerarquía contra el PDF. | **hoy** |
 | | **Cable 2 · eventos.** Toda llamada al modelo pasa por `custodia/ledger`: una línea JSON con actor, paso, motor, endpoint, si el dato salió, tamaño y hash. Nunca el texto. `logs/custody.jsonl` o stdout. La empresa apunta su SIEM ahí. | **cable** |
 | **Prevención de fugas** | El modelo no tiene credenciales; el cliente tiene el endpoint. Los identificadores nunca se contaminan con marcadores ni prefijos que puedan filtrarse a herramientas aguas abajo: `AD-FullID` / `AD-ReqID` quedan limpios. | **hoy** |
