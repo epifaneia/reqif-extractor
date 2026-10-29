@@ -51,7 +51,7 @@ The numbers in this table come from runs on real specification documents of one 
 
 ## Public documents
 
-Run on 24 September 2026. Counted from the output `.reqif` files; every identifier checked by code against the PDF's text.
+Run on 15 June 2026 with this engine (v5); the header of the output reads `Loop APIs v10` because it comes from the Polarion template in `templates/`. Counted from the output `.reqif` files; every identifier checked by code against the PDF's text. The NIST output is in the repository, [`docs/public-run/NIST_SP_800_171r2.reqif`](docs/public-run/NIST_SP_800_171r2.reqif), so its counts can be checked; the AUTOSAR one is not, because the AUTOSAR specifications are copyrighted and the file contains their text.
 
 | Document | Pages | Requirements | Headings | Identifiers |
 |---|---|---|---|---|
@@ -60,7 +60,7 @@ Run on 24 September 2026. Counted from the output `.reqif` files; every identifi
 
 ## Polarion
 
-The AUTOSAR file, imported into a Polarion trial. The import was done by hand; these screenshots are its record. Nothing to redact.
+The AUTOSAR file, imported into a Polarion trial on 24 September 2026. The import was done by hand; these screenshots are its record. Nothing to redact.
 
 *The import mapping: headings to Heading, items to System Requirement, `ReqIF.ChapterName` (heading title) to Title, `ReqIF.Text` to Description. `ReqIF.ForeignID` carries the verbatim id in the file but was left unmapped in this trial.*
 

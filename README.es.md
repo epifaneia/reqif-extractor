@@ -51,7 +51,7 @@ Las cifras de esta tabla vienen de ejecuciones sobre documentos reales de especi
 
 ## Documentos públicos
 
-Ejecución del 24 de septiembre de 2026. Contado en los ficheros `.reqif` de salida; cada identificador, comprobado por código contra el texto del PDF.
+Ejecución del 15 de junio de 2026 con este motor (v5); la cabecera de la salida dice `Loop APIs v10` porque viene de la plantilla de Polarion de `templates/`. Contado en los ficheros `.reqif` de salida; cada identificador, comprobado por código contra el texto del PDF. La salida de NIST está en el repositorio, [`docs/public-run/NIST_SP_800_171r2.reqif`](docs/public-run/NIST_SP_800_171r2.reqif), para que sus cifras se puedan comprobar; la de AUTOSAR no, porque las especificaciones de AUTOSAR tienen copyright y el fichero contiene su texto.
 
 | Documento | Páginas | Requisitos | Cabeceras | Identificadores |
 |---|---|---|---|---|
@@ -60,7 +60,7 @@ Ejecución del 24 de septiembre de 2026. Contado en los ficheros `.reqif` de sal
 
 ## Polarion
 
-El fichero de AUTOSAR, importado en un Polarion de prueba. La importación se hizo a mano; estas capturas son su registro. Nada que tachar.
+El fichero de AUTOSAR, importado en un Polarion de prueba el 24 de septiembre de 2026. La importación se hizo a mano; estas capturas son su registro. Nada que tachar.
 
 *El mapeo de importación: cabeceras a Heading, ítems a System Requirement, `ReqIF.ChapterName` (título de la cabecera) a Title, `ReqIF.Text` a Description. `ReqIF.ForeignID` lleva el id verbatim en el fichero, pero en esta prueba se dejó sin mapear.*
 
