@@ -85,6 +85,17 @@ def _merged_req_count(stem: str) -> int | None:
         return None
 
 
+def _type_coerced_count(stem: str) -> int:
+    """Nº de ítems de la pasada A con `type` inválido forzado a requirement (s3)."""
+    p = config.JSON_A_DIR / f"{stem}.json"
+    if not p.is_file():
+        return 0
+    try:
+        return len(json.loads(p.read_text(encoding="utf-8")).get("type_coerced") or [])
+    except Exception:
+        return 0
+
+
 def _process_doc(pdf: Path) -> dict:
     """Corre los 6 pasos de UN documento. Nunca lanza: los fallos se reportan.
 
@@ -161,6 +172,10 @@ def main() -> int:
     for stem in sorted(done_stems):
         if _merged_req_count(stem) == 0:
             print(f"  [WARNING] {stem}: 0 requisitos, revisar")
+        n_coerced = _type_coerced_count(stem)
+        if n_coerced:
+            print(f"  [WARNING] {stem}: {n_coerced} ítem(s) con `type` inválido → requirement "
+                  f"(type_coerced en json_a), revisar")
     if failures:
         print(f"  {len(failures)} documento(s) con fallo:")
         for stem, script, err in sorted(failures):

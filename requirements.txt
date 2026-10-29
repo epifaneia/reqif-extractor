@@ -1,16 +1,16 @@
+# Pipeline completo (s1 → s6). Arrastra torch vía docling y gmft.
+-r requirements-core.txt
+
 # Conversión de PDF (pasada A)
-docling
+docling==2.85.0
 
 # Tablas vectoriales deterministas (s4a, v5) — TATR sobre posiciones de texto
-gmft
+gmft==0.4.4
 
-# Generación / parseo de ReqIF (s6, validación)
-lxml
+# gmft necesita transformers<5: el config TATR trae dilation=None y la
+# validación estricta de 5.x lo rechaza. docling 2.85 admite 4.57.x
+# (docs/ARCHITECTURE_v5.md, nota de entorno). Sin este pin pip resuelve 5.x.
+transformers==4.57.6
 
-# Lectura de páginas en el fallback de página completa (s4, activo por defecto)
-pypdf
-
-# Carga de .env (GEMINI_API_KEY)
-python-dotenv
-
-# NOTA: el cliente Gemini usa urllib de la stdlib (sin SDK).
+# Render de crops de regiones (s1) y tools/verify_positions
+pypdfium2==5.14.0

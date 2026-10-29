@@ -10,6 +10,10 @@ Centinela de salida: en docs muy densos una sola llamada devuelve solo parte de
 los ítems, así que se extrae en TANDAS (cada una excluye los req_ids ya vistos)
 hasta tanda vacía o config.EXTRACT_MAX_ROUNDS.
 
+Esquema forzado: extracción y auditoría de headers llevan responseSchema
+(REQS_SCHEMA, AUDIT_SCHEMA). Un `type` inválido no se corrige en silencio: el
+ítem queda como "requirement" con `type_coerced` y se lista en json_a.
+
 Uso:
   python pipeline/s3_requirements.py AUTOSAR_SWS_COM   # un doc (o substring)
   python pipeline/s3_requirements.py           # todos los que tengan json_a
@@ -38,6 +42,45 @@ _AUDIT_FILE = config.PROMPTS_DIR / "rescue_audit.txt"
 _SYSTEM_AUDIT = _AUDIT_FILE.read_text(encoding="utf-8") if _AUDIT_FILE.is_file() else ""
 
 _VALID_TYPES = {"requirement", "information"}
+
+# ── esquemas de salida (responseSchema Gemini) ──────────────────────────────
+# Mismo estilo que s4_vision: planos, `type` como enum. parent_header NO es
+# obligatorio (el prompt admite null; ausente = null), igual que RESCUE_SCHEMA.
+# Que parent_header sea un anchor conocido lo comprueba el código, no el
+# esquema (los anchors HX los propone el propio modelo en la misma respuesta).
+REQS_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "headers_adicionales": {"type": "ARRAY", "items": {
+            "type": "OBJECT",
+            "properties": {"after_anchor": {"type": "STRING"},
+                           "new_anchor": {"type": "STRING"},
+                           "level": {"type": "INTEGER"},
+                           "number": {"type": "STRING"},
+                           "title": {"type": "STRING"},
+                           "evidencia": {"type": "STRING"}},
+            "required": ["after_anchor", "new_anchor", "level", "title"]}},
+        "requisitos": {"type": "ARRAY", "items": {
+            "type": "OBJECT",
+            "properties": {"req_id": {"type": "STRING"},
+                           "texto": {"type": "STRING"},
+                           "type": {"type": "STRING",
+                                    "enum": ["requirement", "information"]},
+                           "parent_header": {"type": "STRING"}},
+            "required": ["req_id", "texto", "type"]}},
+    },
+    "required": ["headers_adicionales", "requisitos"],
+}
+AUDIT_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {"evaluaciones": {"type": "ARRAY", "items": {
+        "type": "OBJECT",
+        "properties": {"new_anchor": {"type": "STRING"},
+                       "decision": {"type": "STRING", "enum": ["ACCEPT", "REJECT"]},
+                       "razon": {"type": "STRING"}},
+        "required": ["new_anchor", "decision"]}}},
+    "required": ["evaluaciones"],
+}
 
 
 def _slug(name: str) -> str:
@@ -103,7 +146,7 @@ def _audit_extras(stem: str, candidates: list[dict], parser_headers: list[Header
         try:
             data = gemini_json(api_key=config.GEMINI_API_KEY, model=config.GEMINI_MODEL,
                                user_text=user_text, system_instruction=_SYSTEM_AUDIT, temperature=0.0,
-                               timeout_s=config.GEMINI_REQ_TIMEOUT)
+                               timeout_s=config.GEMINI_REQ_TIMEOUT, response_schema=AUDIT_SCHEMA)
             break
         except Exception as e:
             _log.warning("s3 audit %s intento %s: %s", stem, attempt, e)
@@ -180,7 +223,7 @@ def _call_reqs(stem: str, user_text: str, tag: str):
         try:
             return gemini_json(api_key=config.GEMINI_API_KEY, model=config.GEMINI_MODEL,
                                user_text=user_text, system_instruction=_SYSTEM_REQS, temperature=0.1,
-                               timeout_s=config.GEMINI_REQ_TIMEOUT)
+                               timeout_s=config.GEMINI_REQ_TIMEOUT, response_schema=REQS_SCHEMA)
         except Exception as e:
             _log.warning("s3 %s %s intento %s: %s", stem, tag, attempt, e)
             if attempt < 2:
@@ -238,13 +281,31 @@ def _llm_pass(stem: str, md_text: str, parser_headers: list[Header]) -> tuple[li
             break  # solo repitió ya-vistos → no insistir
 
     if not any_ok:
-        return parser_headers, [], rounds  # ni una tanda buena: no podar headers
+        return parser_headers, [], rounds, []  # ni una tanda buena: no podar headers
 
     extras = _audit_extras(stem, _validate_extras(stem, raw_extras, parser_headers), parser_headers)
     merged_headers = _merge_extras(parser_headers, extras)
     all_anchors = {h["anchor"] for h in merged_headers}
 
+    out, coerced = _finalize_reqs(raw_reqs, all_anchors)
+
+    # NO podar aquí: los headers vacíos en la pasada A pueden tener reqs de la
+    # pasada B (visión). La poda se hace en s5, tras fusionar A∪B. Si podáramos
+    # aquí, en docs donde docling pierde los IDs (s3=0 reqs) se irían TODOS los
+    # headers y los reqs de visión quedarían huérfanos (bug visto en un doc real).
+    return merged_headers, out, rounds, coerced
+
+
+def _finalize_reqs(raw_reqs: list[dict], all_anchors: set[str]) -> tuple[list[dict], list[dict]]:
+    """Normaliza los ítems de la pasada A. Determinista, sin API.
+
+    `type` fuera de {requirement, information} (el esquema lo impide, pero un
+    modelo puede saltárselo): el ítem SE CONSERVA con el default conservador
+    "requirement", marcado `type_coerced: true` y listado aparte con su valor
+    original — nunca en silencio. Devuelve (ítems, coerciones).
+    """
     out: list[dict] = []
+    coerced: list[dict] = []
     for r in raw_reqs:
         req_id = str(r.get("req_id") or "").strip()
         texto = str(r.get("texto") or "").strip()
@@ -252,16 +313,15 @@ def _llm_pass(stem: str, md_text: str, parser_headers: list[Header]) -> tuple[li
         parent = parent.strip() or None if isinstance(parent, str) else None
         if parent is not None and parent not in all_anchors:
             parent = None
-        tipo = str(r.get("type") or "").strip().lower()
+        raw_type = str(r.get("type") or "").strip()
+        tipo = raw_type.lower()
+        item = {"req_id": req_id, "texto": texto, "type": tipo, "parent_header": parent}
         if tipo not in _VALID_TYPES:
-            tipo = "requirement"  # default conservador
-        out.append({"req_id": req_id, "texto": texto, "type": tipo, "parent_header": parent})
-
-    # NO podar aquí: los headers vacíos en la pasada A pueden tener reqs de la
-    # pasada B (visión). La poda se hace en s5, tras fusionar A∪B. Si podáramos
-    # aquí, en docs donde docling pierde los IDs (s3=0 reqs) se irían TODOS los
-    # headers y los reqs de visión quedarían huérfanos (bug visto en un doc real).
-    return merged_headers, out, rounds
+            item["type"] = "requirement"  # default conservador, pero a la vista
+            item["type_coerced"] = True
+            coerced.append({"req_id": req_id, "type_raw": raw_type})
+        out.append(item)
+    return out, coerced
 
 
 def process(stem: str) -> dict:
@@ -269,18 +329,20 @@ def process(stem: str) -> dict:
     ja_path = config.JSON_A_DIR / f"{stem}.json"
     base = json.loads(ja_path.read_text(encoding="utf-8")) if ja_path.is_file() else {}
     parser_headers = base.get("headers", [])
-    headers, reqs, rounds = _llm_pass(stem, md, parser_headers)
+    headers, reqs, rounds, coerced = _llm_pass(stem, md, parser_headers)
     obj = {
         "stem": stem,
         "source_file": _source_pdf_name(stem),
         "headers": headers,
         "requisitos": reqs,
+        "type_coerced": coerced,  # informe: `type` inválido → "requirement"
     }
     ja_path.parent.mkdir(parents=True, exist_ok=True)
     ja_path.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
     n_info = sum(1 for r in reqs if r["type"] == "information")
     return {"stem": stem, "headers": len(headers), "reqs": len(reqs),
-            "info": n_info, "req": len(reqs) - n_info, "rounds": rounds}
+            "info": n_info, "req": len(reqs) - n_info, "rounds": rounds,
+            "coerced": coerced}
 
 
 def main() -> int:
@@ -295,6 +357,11 @@ def main() -> int:
         r = process(ja.stem)
         print(f"  {r['stem'][:46]:46s} → {r['reqs']:4d} reqs ({r['req']} req + {r['info']} info) "
               f"· {r['headers']} headers · {r['rounds']} tanda(s)")
+        if r["coerced"]:
+            print(f"  [WARNING] {r['stem']}: {len(r['coerced'])} ítem(s) con `type` inválido "
+                  f"→ requirement (type_coerced en json_a)")
+            for c in r["coerced"][:10]:
+                print(f"      · {c['req_id']}  type={c['type_raw'] or '(vacío)'}")
     return 0
 
 

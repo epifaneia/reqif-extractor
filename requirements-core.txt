@@ -1,0 +1,11 @@
+# Núcleo ligero: s5/s6, tools/ y tests/ (sin modelos, sin torch).
+# python tests/todas.py corre solo con esto.
+
+# Generación / parseo de ReqIF (s6, crop_ids, sanitize_reqif, validación)
+lxml==6.0.2
+
+# Lectura de páginas en el fallback de página completa (s4, activo por defecto)
+pypdf==6.9.2
+
+# NOTA: el cliente Gemini usa urllib de la stdlib (sin SDK); config.py lee .env
+# sin dependencias (no hace falta python-dotenv).
