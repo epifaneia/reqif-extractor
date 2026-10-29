@@ -39,7 +39,7 @@ Any assistant can read a specification PDF and list its requirements as text. Wh
 
 ## Measured
 
-Numbers come from a run over 12 real specification documents of one manufacturer (confidential, not included) and are reproduced on public documents in the demo below.
+Numbers come from a run over 12 real specification documents of one manufacturer (confidential, not included; processed in the cloud with the client's authorisation) and are reproduced on public documents in the demo below.
 
 | What | Number | Where it comes from |
 |---|---|---|
@@ -93,7 +93,7 @@ Output: `data/outputs/reqif/v1_nested/<doc>.reqif`. This repository ships no dat
   | Cost | Per token; ~1/20 of whole-PDF vision after region routing | Electricity |
   | Switch | Default | `REQIF_VLM_BACKEND=local` |
 
-  So the engine is for **public or non-confidential specifications**. A fully local route (pass A and tables through a local model) is not built.
+  So the engine is for **public or non-confidential specifications**, or confidential ones only when their owner authorises sending them to the cloud, as the client did for the 12 documents above. A fully local route (pass A and tables through a local model) is not built.
 - `reference/gold.reqif`, a file that imported correctly into Polarion, is optional and not included: it depends on your project's template.
 - Identity, events and sign-off are shipped as a contract with a local default (environment variable, JSONL file, HMAC key). The adapters to a company's Entra ID, SIEM or PKI are not here and cannot be tested here: see [docs/INTEGRATION.md](docs/INTEGRATION.md).
 
@@ -105,7 +105,7 @@ Same four headings in every repository. Rows marked **today** are what the code 
 
 | | | |
 |---|---|---|
-| **Confidentiality** | This engine sends document text to a cloud model (`GEMINI_MODEL`), so it is for **non-confidential specifications only**. What leaves: the markdown of the document in pass A, table rows as text in pass B, and figure crops unless `REQIF_VLM_BACKEND=local`, which keeps only the crops on the machine. `.env` and `data/` are outside git. | **today** |
+| **Confidentiality** | This engine sends document text to a cloud model (`GEMINI_MODEL`), so it is for **non-confidential specifications**, or confidential ones whose owner authorises cloud processing. What leaves: the markdown of the document in pass A, table rows as text in pass B, and figure crops unless `REQIF_VLM_BACKEND=local`, which keeps only the crops on the machine. `.env` and `data/` are outside git. | **today** |
 | | A fully local route (pass A and tables through a local model), then local by default with cloud as the exception that has to be switched on. Not done yet: today the cloud is required, and the ledger records every call that leaves. | **next** |
 | **Traceability** | Every item carries its origin: page, header anchor, source of the id (verbatim, derived, page-anchored), and the reconciliation flips of `infoguard` are reported per document. `s5b_positions` writes an audit of order and hierarchy against the PDF. | **today** |
 | | **Wire 2 · events.** Every model call goes through `custodia/ledger`: one JSON line with actor, step, engine, endpoint, whether data left the machine, input size and hash. Never the text. `logs/custody.jsonl` or stdout. The company points its SIEM at it. | **wire** |

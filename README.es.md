@@ -39,7 +39,7 @@ Cualquier asistente lee un PDF de especificación y te lista los requisitos en t
 
 ## Medido
 
-Las cifras vienen de una pasada sobre 12 documentos reales de especificación de un fabricante (confidenciales, no incluidos) y se reproducen sobre documentos públicos en la demo de abajo.
+Las cifras vienen de una pasada sobre 12 documentos reales de especificación de un fabricante (confidenciales, no incluidos; procesados en la nube con autorización del cliente) y se reproducen sobre documentos públicos en la demo de abajo.
 
 | Qué | Cifra | De dónde sale |
 |---|---|---|
@@ -93,7 +93,7 @@ Salida: `data/outputs/reqif/v1_nested/<doc>.reqif`. Este repositorio no lleva da
   | Coste | Por token; ~1/20 de la visión del PDF entero tras el enrutado por regiones | Electricidad |
   | Cómo se activa | Por defecto | `REQIF_VLM_BACKEND=local` |
 
-  Por tanto, el motor es para **especificaciones públicas o no confidenciales**. Una ruta enteramente local (pasada A y tablas con un modelo local) no está construida.
+  Por tanto, el motor es para **especificaciones públicas o no confidenciales**, o confidenciales solo si su dueño autoriza enviarlas a la nube, como hizo el cliente con los 12 documentos de arriba. Una ruta enteramente local (pasada A y tablas con un modelo local) no está construida.
 - `reference/gold.reqif`, un fichero que importó bien en Polarion, es opcional y no se incluye: depende de la plantilla de tu proyecto.
 - Identidad, eventos y firma van como contrato con un valor local por defecto (variable de entorno, fichero JSONL, clave HMAC). Los adaptadores al Entra ID, SIEM o PKI de una empresa no están aquí ni se pueden probar aquí: ver [docs/INTEGRATION.es.md](docs/INTEGRATION.es.md).
 
@@ -105,7 +105,7 @@ Los mismos cuatro epígrafes en todos los repositorios. Las filas **hoy** son lo
 
 | | | |
 |---|---|---|
-| **Confidencialidad** | Este motor envía texto del documento a un modelo de nube (`GEMINI_MODEL`), así que es **solo para especificaciones no confidenciales**. Qué sale: el markdown del documento en la pasada A, las filas de tabla como texto en la pasada B, y los recortes de figuras salvo con `REQIF_VLM_BACKEND=local`, que deja en la máquina solo los recortes. `.env` y `data/` fuera de git. | **hoy** |
+| **Confidencialidad** | Este motor envía texto del documento a un modelo de nube (`GEMINI_MODEL`), así que es **para especificaciones no confidenciales**, o confidenciales cuyo dueño autorice procesarlas en la nube. Qué sale: el markdown del documento en la pasada A, las filas de tabla como texto en la pasada B, y los recortes de figuras salvo con `REQIF_VLM_BACKEND=local`, que deja en la máquina solo los recortes. `.env` y `data/` fuera de git. | **hoy** |
 | | Una ruta enteramente local (pasada A y tablas con un modelo local) y, después, local por defecto con la nube como excepción que hay que activar. Aún no hecho: hoy la nube es obligatoria, y el ledger registra cada llamada que sale. | **siguiente** |
 | **Trazabilidad** | Cada ítem lleva su origen: página, anchor del header, procedencia del id (verbatim, derivado, anclado a página), y los cambios de `infoguard` se reportan por documento. `s5b_positions` escribe una auditoría de orden y jerarquía contra el PDF. | **hoy** |
 | | **Cable 2 · eventos.** Toda llamada al modelo pasa por `custodia/ledger`: una línea JSON con actor, paso, motor, endpoint, si el dato salió, tamaño y hash. Nunca el texto. `logs/custody.jsonl` o stdout. La empresa apunta su SIEM ahí. | **cable** |
