@@ -6,7 +6,7 @@ Turns a specification PDF into a ReqIF file that imports into Polarion with the 
 
 > AI carries risk. Code bounds it. The standard answers for what remains.
 
-[Design philosophy](#design-philosophy) · [Why AI here](#why-ai-here) · [The five steps](#the-five-steps-in-this-project) · [Measured](#measured) · [Demo](#demo-in-four-commands-public-data) · [Limitations](#limitations) · [Security & regulation](#security--regulation)
+[Design philosophy](#design-philosophy) · [Why AI here](#why-ai-here) · [The five steps](#the-five-steps-in-this-project) · [Measured](#measured) · [Public documents](#public-documents) · [Demo](#demo-in-four-commands-public-data) · [Limitations](#limitations) · [Security & regulation](#security--regulation)
 
 ---
 
@@ -39,19 +39,28 @@ Any assistant can read a specification PDF and list its requirements as text. Wh
 
 ## Measured
 
-Numbers come from a run over 12 real specification documents of one manufacturer (confidential, not included; processed in the cloud with the client's authorisation) and are reproduced on public documents in the demo below.
+The numbers in this table come from runs on real specification documents of one manufacturer (confidential, not included; processed in the cloud with the client's authorisation). The last column says which run each one comes from. The figures measured on public documents are in the next section, counted from the output files.
 
 | What | Number | Where it comes from |
 |---|---|---|
-| Identifiers the model invented on the table route, before the policy | **167 of 170** rows | Row numbering mimicking the document's convention, colliding with real ids (`…-7` vs `…-007`) |
-| Identifiers that changed between two runs on the same PDF, before the policy | **49 of 214** | Not reproducible. After the policy: 0 |
+| Identifiers the model invented on the table route, before the policy | **167 of 170** rows | One real document with 170 table rows, recorded in `utils/id_policy.py` when it was measured; no results file. The model numbered rows mimicking the document's convention, colliding with real ids (`…-7` vs `…-007`) |
+| Identifiers that changed between two runs on the same PDF, before the policy | **49 of 214** | Same document and same record. Not reproducible. After the policy: 0 |
 | Cost of pass B with region routing, 9-document batch (~600 pages) | **$0.43** | Whole-PDF vision was ~1 € per 100 pages, ~6 € for those pages (different currencies, so no exact ratio is claimed) |
 | Items kept by region routing against the whole-PDF vision baseline | **98.4 %** (1,194 of 1,214) | Compared id by id; the 20 missing (1.65 %) were audited one by one: arbiter discards in three documents |
-| Documents passing the five structural checks against a Polarion-imported reference | **12 / 12**, 0 orphans | XML well-formed, spec types identical, one div root, references resolved, per-document id prefix |
+| Documents passing the five structural checks against a Polarion-imported reference | **12 / 12**, 2,695 references resolved, 0 orphans | Measured on the previous engine (v4) with Python and lxml over the real files (private report, 12 June 2026). On the current engine: 12 documents × 2 modes, XML valid and references resolved. Checks: XML well-formed, spec types identical, one div root, references resolved, per-document id prefix |
+
+## Public documents
+
+Run on 24 September 2026. Counted from the output `.reqif` files; every identifier checked by code against the PDF's text.
+
+| Document | Pages | Requirements | Headings | Identifiers |
+|---|---|---|---|---|
+| AUTOSAR Specification of Communication (SWS COM), Classic Platform R21-11 | 220 | **465** | **217** | 465 of 465 copied verbatim from the PDF (351 `SWS_Com_…`, 114 `ECUC_Com_…`); none derived or page-anchored |
+| NIST SP 800-171 Rev. 2 (public domain; withdrawn on 14 May 2024 and superseded by Rev. 3) | 114 | **382** | **18** | 382 of 382 copied verbatim from the PDF |
 
 ## Polarion
 
-Public data in a Polarion trial: the AUTOSAR SWS COM specification, 465 items and 217 headings extracted from the PDF and imported in one attempt. Nothing to redact.
+The AUTOSAR file, imported into a Polarion trial. The import was done by hand; these screenshots are its record. Nothing to redact.
 
 *The import mapping: headings to Heading, items to System Requirement, `ReqIF.ChapterName` (heading title) to Title, `ReqIF.Text` to Description. `ReqIF.ForeignID` carries the verbatim id in the file but was left unmapped in this trial.*
 
@@ -87,6 +96,7 @@ This repository ships no data; `data/` is ignored by git.
 
 ## Limitations
 
+- `id_policy` is slightly weaker than "verbatim or nothing" in two cases, found by the tests: an id with the derived shape (`….N`) passes on shape alone on the crop, rescue and fallback routes (the table route is safe: it ignores ids the model returns), and "verbatim" is a substring test, so a truncated prefix of a real id is accepted. Fixing both needs re-measuring on the real corpus.
 - Items of `type=information` are still emitted as requirement work items, explicitly marked `(information only)` in the visible text. Mapping them to Polarion's native Info type is pending.
 - The vision pass still has noise: a false positive with a new id enters the file. `id_policy` rejects the invented ones; it cannot reject a real-looking one that is simply wrong.
 - **The engine always needs the cloud today.** Pass A (document markdown), table rows and orphan arbitration go to Gemini whatever the backend. The local VLM replaces only one call, the figure crops of pass B:

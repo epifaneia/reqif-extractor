@@ -6,7 +6,7 @@ Convierte un PDF de especificación en un fichero ReqIF que se importa en Polari
 
 > La IA tiene riesgos. El código los acota. La norma responde de lo que queda.
 
-[Filosofía de diseño](#filosofía-de-diseño) · [Dónde aporta valor la IA](#dónde-aporta-valor-la-ia) · [Los cinco pasos](#los-cinco-pasos-en-este-proyecto) · [Medido](#medido) · [Demo](#demo-en-cuatro-comandos-datos-públicos) · [Limitaciones](#limitaciones) · [Seguridad y regulación](#seguridad-y-regulación)
+[Filosofía de diseño](#filosofía-de-diseño) · [Dónde aporta valor la IA](#dónde-aporta-valor-la-ia) · [Los cinco pasos](#los-cinco-pasos-en-este-proyecto) · [Medido](#medido) · [Documentos públicos](#documentos-públicos) · [Demo](#demo-en-cuatro-comandos-datos-públicos) · [Limitaciones](#limitaciones) · [Seguridad y regulación](#seguridad-y-regulación)
 
 ---
 
@@ -39,19 +39,28 @@ Cualquier asistente lee un PDF de especificación y te lista los requisitos en t
 
 ## Medido
 
-Las cifras vienen de una pasada sobre 12 documentos reales de especificación de un fabricante (confidenciales, no incluidos; procesados en la nube con autorización del cliente) y se reproducen sobre documentos públicos en la demo de abajo.
+Las cifras de esta tabla vienen de ejecuciones sobre documentos reales de especificación de un fabricante (confidenciales, no incluidos; procesados en la nube con autorización del cliente). La última columna dice de qué ejecución sale cada una. Las cifras medidas sobre documentos públicos están en la sección siguiente, contadas en los ficheros de salida.
 
 | Qué | Cifra | De dónde sale |
 |---|---|---|
-| Identificadores que el modelo inventó en la ruta de tablas, antes de la política | **167 de 170** filas | Numeraba filas imitando la convención del documento y colisionaba con ids reales (`…-7` frente a `…-007`) |
-| Identificadores que cambiaron entre dos ejecuciones sobre el mismo PDF, antes de la política | **49 de 214** | No reproducible. Con la política: 0 |
+| Identificadores que el modelo inventó en la ruta de tablas, antes de la política | **167 de 170** filas | Un documento real de 170 filas de tabla, anotado en `utils/id_policy.py` cuando se midió; no hay fichero de resultados. El modelo numeraba filas imitando la convención del documento y colisionaba con ids reales (`…-7` frente a `…-007`) |
+| Identificadores que cambiaron entre dos ejecuciones sobre el mismo PDF, antes de la política | **49 de 214** | El mismo documento y la misma anotación. No reproducible. Con la política: 0 |
 | Coste de la pasada B con enrutado por regiones, lote de 9 documentos (~600 páginas) | **0,43 $** | La visión del PDF entero costaba ~1 € por 100 páginas, ~6 € para esas páginas (monedas distintas, así que no se afirma un cociente exacto) |
 | Ítems que conserva el enrutado por regiones frente a la referencia de visión del PDF entero | **98,4 %** (1.194 de 1.214) | Comparados id a id; los 20 que faltan (1,65 %) se auditaron uno a uno: descartes del árbitro en tres documentos |
-| Documentos que pasan las cinco comprobaciones estructurales contra una referencia importada en Polarion | **12 / 12**, 0 huérfanos | XML bien formado, spec types idénticos, un div raíz, referencias resueltas, prefijo de id por documento |
+| Documentos que pasan las cinco comprobaciones estructurales contra una referencia importada en Polarion | **12 / 12**, 2.695 referencias resueltas, 0 huérfanos | Medido con el motor anterior (v4), con Python y lxml sobre los ficheros reales (informe privado, 12 de junio de 2026). Con el motor actual: 12 documentos × 2 modos, XML válido y referencias resueltas. Comprobaciones: XML bien formado, spec types idénticos, un div raíz, referencias resueltas, prefijo de id por documento |
+
+## Documentos públicos
+
+Ejecución del 24 de septiembre de 2026. Contado en los ficheros `.reqif` de salida; cada identificador, comprobado por código contra el texto del PDF.
+
+| Documento | Páginas | Requisitos | Cabeceras | Identificadores |
+|---|---|---|---|---|
+| AUTOSAR Specification of Communication (SWS COM), Classic Platform R21-11 | 220 | **465** | **217** | 465 de 465 copiados tal cual del PDF (351 `SWS_Com_…`, 114 `ECUC_Com_…`); ninguno derivado ni anclado a página |
+| NIST SP 800-171 Rev. 2 (dominio público; retirada el 14 de mayo de 2024 y sustituida por la Rev. 3) | 114 | **382** | **18** | 382 de 382 copiados tal cual del PDF |
 
 ## Polarion
 
-Datos públicos en un Polarion de prueba: la especificación AUTOSAR SWS COM, 465 ítems y 217 cabeceras extraídos del PDF e importados a la primera. Nada que tachar.
+El fichero de AUTOSAR, importado en un Polarion de prueba. La importación se hizo a mano; estas capturas son su registro. Nada que tachar.
 
 *El mapeo de importación: cabeceras a Heading, ítems a System Requirement, `ReqIF.ChapterName` (título de la cabecera) a Title, `ReqIF.Text` a Description. `ReqIF.ForeignID` lleva el id verbatim en el fichero, pero en esta prueba se dejó sin mapear.*
 
@@ -87,6 +96,7 @@ Este repositorio no lleva datos; `data/` está fuera de git.
 
 ## Limitaciones
 
+- `id_policy` es algo más débil que «verbatim o nada» en dos casos que encontraron los tests: un id con forma de derivado (`….N`) pasa solo por su forma en las rutas de recortes, rescate y fallback (la ruta de tablas es segura: ignora los ids que devuelve el modelo), y «verbatim» es una búsqueda de subcadena, así que un prefijo truncado de un id real se acepta. Arreglar los dos exige volver a medir sobre el corpus real.
 - Los ítems `type=information` siguen saliendo como work items de requisito, marcados explícitamente `(information only)` en el texto visible. Mapearlos al tipo Info nativo de Polarion está pendiente.
 - La pasada de visión aún tiene ruido: un falso positivo con un id nuevo entra al fichero. `id_policy` rechaza los inventados; no puede rechazar uno con pinta real que simplemente esté mal.
 - **Hoy el motor necesita siempre la nube.** La pasada A (markdown del documento), las filas de tabla y el arbitraje de huérfanos van a Gemini sea cual sea el backend. El VLM local sustituye una sola llamada, la de recortes de figuras de la pasada B:
