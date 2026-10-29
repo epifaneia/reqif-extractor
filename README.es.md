@@ -45,9 +45,8 @@ Las cifras vienen de una pasada sobre 12 documentos reales de especificación de
 |---|---|---|
 | Identificadores que el modelo inventó en la ruta de tablas, antes de la política | **167 de 170** filas | Numeraba filas imitando la convención del documento y colisionaba con ids reales (`…-7` frente a `…-007`) |
 | Identificadores que cambiaron entre dos ejecuciones sobre el mismo PDF, antes de la política | **49 de 214** | No reproducible. Con la política: 0 |
-| Ítems clasificados como requisito que la fuente marcaba "information only" | **17** en 12 documentos | Recuperados por `s5c_infoguard` contra el marcador de la fuente |
 | Coste de la pasada B, enrutado por regiones frente a visión del PDF entero | **~1/20** | Mismo recall; la visión del PDF entero costaba ~1 € por 100 páginas |
-| Documentos que pasan las cinco comprobaciones estructurales contra una referencia importada en Polarion | **12 / 12**, 2.695 referencias resueltas, 0 huérfanos | XML bien formado, spec types idénticos, un div raíz, referencias resueltas, prefijo de id por documento |
+| Documentos que pasan las cinco comprobaciones estructurales contra una referencia importada en Polarion | **12 / 12**, 0 huérfanos | XML bien formado, spec types idénticos, un div raíz, referencias resueltas, prefijo de id por documento |
 
 ## Polarion
 

@@ -45,9 +45,8 @@ Numbers come from a run over 12 real specification documents of one manufacturer
 |---|---|---|
 | Identifiers the model invented on the table route, before the policy | **167 of 170** rows | Row numbering mimicking the document's convention, colliding with real ids (`…-7` vs `…-007`) |
 | Identifiers that changed between two runs on the same PDF, before the policy | **49 of 214** | Not reproducible. After the policy: 0 |
-| Items misclassified as requirement that the source marked "information only" | **17** in 12 documents | Recovered by `s5c_infoguard` against the source marker |
 | Cost of pass B, region routing vs whole-PDF vision | **~1/20** | Same recall; whole-PDF vision was ~1 € per 100 pages |
-| Documents passing the five structural checks against a Polarion-imported reference | **12 / 12**, 2,695 references resolved, 0 orphans | XML well-formed, spec types identical, one div root, references resolved, per-document id prefix |
+| Documents passing the five structural checks against a Polarion-imported reference | **12 / 12**, 0 orphans | XML well-formed, spec types identical, one div root, references resolved, per-document id prefix |
 
 ## Polarion
 
