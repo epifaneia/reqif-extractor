@@ -56,7 +56,7 @@ Ejecución del 15 de junio de 2026 con este motor (v5); la cabecera de la salida
 | Documento | Páginas | Requisitos | Cabeceras | Identificadores |
 |---|---|---|---|---|
 | AUTOSAR Specification of Communication (SWS COM), Classic Platform R21-11 | 220 | **465** | **217** | 465 de 465 copiados tal cual del PDF (351 `SWS_Com_…`, 114 `ECUC_Com_…`); ninguno derivado ni anclado a página |
-| NIST SP 800-171 Rev. 2 (dominio público; retirada el 14 de mayo de 2024 y sustituida por la Rev. 3) | 114 | **382** | **18** | 382 de 382 copiados tal cual del PDF |
+| NIST SP 800-171 Rev. 2 (dominio público; retirada el 14 de mayo de 2024 y sustituida por la Rev. 3) | 114 | **382**: los 110 requisitos de seguridad (3.1.1 a 3.14.7) y 272 filas de las tablas de correspondencia (controles de NIST SP 800-53 e ISO/IEC 27001) | **18** | 382 de 382 copiados tal cual del PDF |
 
 ## Polarion
 

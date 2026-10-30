@@ -56,7 +56,7 @@ Run on 15 June 2026 with this engine (v5); the header of the output reads `Loop 
 | Document | Pages | Requirements | Headings | Identifiers |
 |---|---|---|---|---|
 | AUTOSAR Specification of Communication (SWS COM), Classic Platform R21-11 | 220 | **465** | **217** | 465 of 465 copied verbatim from the PDF (351 `SWS_Com_…`, 114 `ECUC_Com_…`); none derived or page-anchored |
-| NIST SP 800-171 Rev. 2 (public domain; withdrawn on 14 May 2024 and superseded by Rev. 3) | 114 | **382** | **18** | 382 of 382 copied verbatim from the PDF |
+| NIST SP 800-171 Rev. 2 (public domain; withdrawn on 14 May 2024 and superseded by Rev. 3) | 114 | **382**: the 110 security requirements (3.1.1 to 3.14.7) and 272 rows of the mapping tables (NIST SP 800-53 and ISO/IEC 27001 controls) | **18** | 382 of 382 copied verbatim from the PDF |
 
 ## Polarion
 
